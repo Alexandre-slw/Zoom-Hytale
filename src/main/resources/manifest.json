@@ -1,0 +1,22 @@
+{
+    "Group": "Alexandre",
+    "Name": "Zoom",
+    "Version": "1.0.0",
+    "Description": "Zoom using your Walk keybind (Left Alt).",
+    "Authors": [
+        {
+            "Name": "Alexandre",
+            "Email": "contact@alexandre.gg",
+            "Url": "https://github.com/Alexandre-slw"
+        }
+    ],
+    "Website": "https://alexandre.gg",
+    "DisabledByDefault": false,
+    "IncludesAssetPack": false,
+    "Dependencies": {
+        "Hytale:EntityModule": "*"
+    },
+    "OptionalDependencies": {},
+    "ServerVersion": "2026.03.26-89796e57b",
+    "Main": "gg.alexandre.zoom.ZoomPlugin"
+}

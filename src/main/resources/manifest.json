@@ -1,8 +1,8 @@
 {
     "Group": "Alexandre",
     "Name": "Fov Zoom",
-    "Version": "1.0.0",
-    "Description": "Zoom using your Walk keybind (Left Alt).",
+    "Version": "1.1.0",
+    "Description": "Zoom using your Walk keybind (Left Alt) and scroll to zoom in or out.",
     "Authors": [
         {
             "Name": "Alexandre",

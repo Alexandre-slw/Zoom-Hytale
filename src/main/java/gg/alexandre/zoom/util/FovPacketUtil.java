@@ -21,19 +21,21 @@ import java.util.*;
 
 public final class FovPacketUtil {
 
-    private static final float ZOOM_FOV = 0.2f;
+    public static final double MIN_FOV = 0.05;
+    public static final double MAX_FOV = 0.5;
+    public static final double STEP = 0.05;
+    private static final int COUNT = (int) Math.round((MAX_FOV - MIN_FOV) / STEP) + 1;
 
     private static final byte FULL_FLUID_LEVEL = 15;
     private static final double DAY_START = 0.25;
     private static final double DAY_END = 0.75;
     private static final double DAWN_END = 0.35;
 
-    private final int fluidFxId =
+    private final int fluidFxBaseId =
             com.hypixel.hytale.server.core.asset.type.fluidfx.config.FluidFX.getAssetMap().getNextIndex();
 
-    private final int fluidId =
+    private final int fluidBaseId =
             com.hypixel.hytale.server.core.asset.type.fluid.Fluid.getAssetMap().getNextIndex();
-    private final int lightFluidId = fluidId + 1;
 
     private boolean setup;
 
@@ -41,7 +43,8 @@ public final class FovPacketUtil {
     private int currentFluidId = -1;
     private final Map<BlockCell, FluidState> cells = new LinkedHashMap<>();
 
-    public void apply(@Nonnull PacketHandler handler, @Nonnull World world, @Nonnull Vector3d playerPosition) {
+    public void apply(double requestedFovModifier, @Nonnull PacketHandler handler, @Nonnull World world,
+                      @Nonnull Vector3d playerPosition) {
         Map<BlockCell, FluidState> actualStates = new LinkedHashMap<>();
         for (BlockCell cell : cellsFor(playerPosition)) {
             FluidState actualState = getActualFluidState(world, cell);
@@ -51,7 +54,7 @@ public final class FovPacketUtil {
         }
 
         Set<BlockCell> targetCells = actualStates.keySet();
-        int targetFluidId = useLightVariant(world) ? lightFluidId : fluidId;
+        int targetFluidId = fluidIdFor(requestedFovModifier, world);
 
         if (applied && currentFluidId == targetFluidId && cells.keySet().equals(targetCells)) {
             return;
@@ -106,24 +109,30 @@ public final class FovPacketUtil {
         Map<Integer, FluidFX> fxMap = new HashMap<>();
         Map<Integer, Fluid> fluidMap = new HashMap<>();
 
-        fxMap.put(fluidFxId, buildFluidFx());
-        fluidMap.put(fluidId, buildInvisibleFluid("fov_zoom_fluid", fluidFxId, false));
-        fluidMap.put(lightFluidId, buildInvisibleFluid("fov_zoom_fluid_light", fluidFxId, true));
+        for (int i = 0; i < COUNT; i++) {
+            float modifier = (float) (MIN_FOV + i * STEP);
+            int fxId = fluidFxBaseId + i;
+            int fluidId = fluidBaseId + i * 2;
+
+            fxMap.put(fxId, buildFluidFx("fov_zoom_fx_" + i, modifier));
+            fluidMap.put(fluidId, buildInvisibleFluid("fov_zoom_fluid_" + i, fxId, false));
+            fluidMap.put(fluidId + 1, buildInvisibleFluid("fov_zoom_fluid_light_" + i, fxId, true));
+        }
 
         handler.writeNoCache(
-                new UpdateFluidFX(UpdateType.AddOrUpdate, fluidFxId + 1, fxMap)
+                new UpdateFluidFX(UpdateType.AddOrUpdate, fluidFxBaseId + COUNT, fxMap)
         );
         handler.writeNoCache(
-                new UpdateFluids(UpdateType.AddOrUpdate, lightFluidId + 1, fluidMap)
+                new UpdateFluids(UpdateType.AddOrUpdate, fluidBaseId + COUNT, fluidMap)
         );
 
         setup = true;
     }
 
     @Nonnull
-    private FluidFX buildFluidFx() {
+    private FluidFX buildFluidFx(@Nonnull String id, float fovModifier) {
         FluidFX fx = new FluidFX();
-        fx.id = "fov_zoom_fx";
+        fx.id = id;
         fx.shader = ShaderType.None;
 
         fx.fogMode = FluidFog.EnvironmentTint;
@@ -143,7 +152,7 @@ public final class FovPacketUtil {
                 1.0f,
                 0,
                 1.0f,
-                FovPacketUtil.ZOOM_FOV,
+                fovModifier,
                 1.0f
         );
 
@@ -175,7 +184,7 @@ public final class FovPacketUtil {
         Store<EntityStore> store = world.getEntityStore().getStore();
         WorldTimeResource timeResource = store.getResource(WorldTimeResource.getResourceType());
         return !timeResource.isScaledDayTimeWithinRange(DAY_START, DAY_END)
-                || timeResource.isScaledDayTimeWithinRange(DAY_START, DAWN_END);
+               || timeResource.isScaledDayTimeWithinRange(DAY_START, DAWN_END);
     }
 
     @Nonnull
@@ -251,6 +260,12 @@ public final class FovPacketUtil {
 
             handler.writeNoCache(packet);
         }
+    }
+
+    private int fluidIdFor(double requestedFovModifier, @Nonnull World world) {
+        double clamped = Math.max(MIN_FOV, Math.min(MAX_FOV, requestedFovModifier));
+        int slot = (int) Math.round((clamped - MIN_FOV) / STEP);
+        return fluidBaseId + slot * 2 + (useLightVariant(world) ? 1 : 0);
     }
 
     private record BlockCell(int x, int y, int z) {

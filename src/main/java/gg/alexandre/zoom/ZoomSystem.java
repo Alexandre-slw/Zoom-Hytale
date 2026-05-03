@@ -42,7 +42,9 @@ public class ZoomSystem extends EntityTickingSystem<EntityStore> {
             return;
         }
 
-        tag.fovUtil.apply(playerRef.getPacketHandler(), store.getExternalData().getWorld(), transform.getPosition());
+        tag.fovUtil.apply(
+                tag.zoomLevel, playerRef.getPacketHandler(), store.getExternalData().getWorld(), transform.getPosition()
+        );
     }
 
 }

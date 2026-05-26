@@ -3,7 +3,7 @@ package gg.alexandre.zoom.util;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.ChunkUtil;
-import com.hypixel.hytale.math.vector.Vector3d;
+import org.joml.Vector3d;
 import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.assets.UpdateFluidFX;
 import com.hypixel.hytale.protocol.packets.assets.UpdateFluids;
